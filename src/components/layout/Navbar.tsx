@@ -1,12 +1,25 @@
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, PlusCircle, History, Settings, Home } from 'lucide-react';
+import { Calendar, PlusCircle, History, Settings, Home, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCycle } from '@/context/CycleContext';
 
 export function Navbar() {
-  const [activeTab, setActiveTab] = useState('/');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.pathname);
+  const { isAuthenticated, checkAuthStatus } = useCycle();
+  
+  // Update active tab when location changes
+  useEffect(() => {
+    setActiveTab(location.pathname);
+  }, [location.pathname]);
+  
+  // Check authentication status
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
   
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
@@ -15,6 +28,11 @@ export function Navbar() {
     { icon: History, label: 'History', path: '/history' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
+  
+  // Add profile link if authenticated
+  if (isAuthenticated) {
+    navItems.push({ icon: User, label: 'Profile', path: '/profile' });
+  }
 
   return (
     <nav className="bg-white shadow-md py-3 px-4 fixed bottom-0 left-0 right-0 z-10 md:top-0 md:bottom-auto">
@@ -47,9 +65,29 @@ export function Navbar() {
                 </Link>
               </Button>
             ))}
+            
+            {!isAuthenticated && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "flex flex-col items-center md:flex-row md:gap-2 px-3 py-2",
+                  activeTab === '/login'
+                    ? "text-maven-purple border-b-2 border-maven-purple rounded-none"
+                    : "text-gray-500"
+                )}
+                onClick={() => setActiveTab('/login')}
+                asChild
+              >
+                <Link to="/login">
+                  <User className="h-5 w-5" />
+                  <span className="text-xs md:text-sm">Login</span>
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>
     </nav>
   );
-}
+};
