@@ -52,6 +52,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				maven: {
+					purple: '#9b87f5',
+					'deep-purple': '#7E69AB',
+					teal: '#4ECDC4',
+					'light-purple': '#E5DEFF',
+					'soft-peach': '#FDE1D3',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
