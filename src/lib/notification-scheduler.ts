@@ -1,11 +1,12 @@
-import { addDays, format, isAfter } from 'date-fns';
+
+import { addDays, format, isAfter, subDays, differenceInDays } from 'date-fns';
 import { addLogEntry } from './activity-logger';
 
 interface ScheduleNotificationParams {
   title: string;
   body: string;
   scheduledDate: Date;
-  type: 'period' | 'fertility' | 'ovulation' | 'reminder';
+  type: 'period' | 'fertility' | 'ovulation' | 'reminder' | 'precaution';
   id?: string;
 }
 
@@ -103,28 +104,152 @@ export const checkScheduledNotifications = (): void => {
   }
 };
 
-// Schedule period prediction notification
-export const schedulePeriodReminder = (predictedDate: Date): void => {
-  // Remind 3 days before expected period
-  const reminderDate = addDays(predictedDate, -3);
+// Schedule period prediction notifications with multiple reminders
+export const schedulePeriodReminders = (predictedDate: Date, periodLength: number = 5): void => {
+  // Advanced notification - 5 days before expected period
+  const advancedReminderDate = subDays(predictedDate, 5);
+  
+  scheduleNotification({
+    title: 'Period Coming Soon',
+    body: `Your next period is expected to begin in 5 days, on ${format(predictedDate, 'MMM d, yyyy')}. Consider stocking up on supplies.`,
+    scheduledDate: advancedReminderDate,
+    type: 'precaution',
+  });
+  
+  // Reminder notification - 3 days before expected period
+  const reminderDate = subDays(predictedDate, 3);
   
   scheduleNotification({
     title: 'Period Reminder',
-    body: `Your next period is expected to start in 3 days, on ${format(predictedDate, 'MMM d, yyyy')}.`,
+    body: `Your next period is expected to start in 3 days, on ${format(predictedDate, 'MMM d, yyyy')}. Prepare your essentials.`,
     scheduledDate: reminderDate,
+    type: 'period',
+  });
+  
+  // Day before notification
+  const dayBeforeDate = subDays(predictedDate, 1);
+  
+  scheduleNotification({
+    title: 'Period Starting Tomorrow',
+    body: `Your period is expected to start tomorrow. Here are some self-care tips: rest well, stay hydrated, and have pain relief on hand if needed.`,
+    scheduledDate: dayBeforeDate,
+    type: 'precaution',
+  });
+  
+  // Period start notification
+  scheduleNotification({
+    title: 'Period Expected Today',
+    body: `Your period is expected to start today. Remember to track your symptoms for better future predictions.`,
+    scheduledDate: new Date(predictedDate),
+    type: 'period',
+  });
+  
+  // Period end notification
+  const endDate = addDays(predictedDate, periodLength - 1);
+  
+  scheduleNotification({
+    title: 'Period Expected to End',
+    body: `Based on your cycle history, your period is expected to end today. How are you feeling?`,
+    scheduledDate: endDate,
     type: 'period',
   });
 };
 
-// Schedule ovulation notification
-export const scheduleOvulationReminder = (ovulationDate: Date): void => {
-  // Remind 1 day before expected ovulation
-  const reminderDate = addDays(ovulationDate, -1);
+// Enhanced ovulation notification with fertility advice
+export const scheduleEnhancedOvulationReminders = (ovulationDate: Date, fertilityWindowStart: Date): void => {
+  // Fertility window start notification
+  scheduleNotification({
+    title: 'Fertility Window Beginning',
+    body: `Your fertility window is beginning. If you're trying to conceive, this is a good time to plan.`,
+    scheduledDate: fertilityWindowStart,
+    type: 'fertility',
+  });
+  
+  // Pre-ovulation notification - 2 days before
+  const preOvulationDate = subDays(ovulationDate, 2);
+  
+  scheduleNotification({
+    title: 'Approaching Peak Fertility',
+    body: `You're approaching your most fertile day. Track any changes in cervical mucus which may become clearer and more stretchy.`,
+    scheduledDate: preOvulationDate,
+    type: 'fertility',
+  });
+  
+  // Ovulation notification - 1 day before
+  const dayBeforeOvulation = subDays(ovulationDate, 1);
   
   scheduleNotification({
     title: 'Ovulation Reminder',
-    body: `You are expected to ovulate tomorrow, on ${format(ovulationDate, 'MMM d, yyyy')}.`,
-    scheduledDate: reminderDate,
+    body: `You are expected to ovulate tomorrow, on ${format(ovulationDate, 'MMM d, yyyy')}. This is your peak fertility day if you're trying to conceive.`,
+    scheduledDate: dayBeforeOvulation,
+    type: 'ovulation',
+  });
+  
+  // Ovulation day notification
+  scheduleNotification({
+    title: 'Ovulation Day',
+    body: `Today is your estimated ovulation day. You may experience a slight increase in basal body temperature or mild cramping.`,
+    scheduledDate: ovulationDate,
     type: 'ovulation',
   });
 };
+
+// Schedule PMS warning with symptom management tips
+export const schedulePMSReminder = (periodDate: Date): void => {
+  // PMS often starts 7-10 days before period
+  const pmsStartDate = subDays(periodDate, 7);
+  
+  scheduleNotification({
+    title: 'PMS May Begin Soon',
+    body: `PMS symptoms may begin soon. Consider these tips: regular exercise, stress management, and reducing caffeine and salt intake can help ease symptoms.`,
+    scheduledDate: pmsStartDate,
+    type: 'precaution',
+  });
+};
+
+// Schedule personalized cycle insights
+export const schedulePersonalizedInsights = (
+  periods: Array<{startDate: string, endDate: string}>,
+  predictedDate: Date
+): void => {
+  if (periods.length >= 3) {
+    // Calculate cycle consistency based on historical data
+    const cycleDeviations = [];
+    for (let i = 1; i < periods.length; i++) {
+      const currentCycleLength = differenceInDays(
+        new Date(periods[i-1].startDate),
+        new Date(periods[i].startDate)
+      );
+      const previousCycleLength = i > 1 ? differenceInDays(
+        new Date(periods[i-2].startDate),
+        new Date(periods[i-1].startDate)
+      ) : currentCycleLength;
+      
+      cycleDeviations.push(Math.abs(currentCycleLength - previousCycleLength));
+    }
+    
+    // Average deviation to determine consistency
+    const averageDeviation = cycleDeviations.reduce((sum, val) => sum + val, 0) / cycleDeviations.length;
+    
+    // Schedule insight notification a week after most recent period
+    const mostRecentPeriod = periods[0];
+    const insightDate = addDays(new Date(mostRecentPeriod.endDate), 7);
+    
+    let insightMessage = '';
+    if (averageDeviation <= 2) {
+      insightMessage = `Your cycles are very regular (varying by ~${Math.round(averageDeviation)} days). Your predictions should be quite accurate.`;
+    } else if (averageDeviation <= 5) {
+      insightMessage = `Your cycles have moderate variability (averaging ~${Math.round(averageDeviation)} days difference). Consider tracking additional factors like stress and exercise that may influence cycle length.`;
+    } else {
+      insightMessage = `Your cycles show significant variability (averaging ~${Math.round(averageDeviation)} days difference). Consider consulting with a healthcare provider if this is unusual for you.`;
+    }
+    
+    scheduleNotification({
+      title: 'Your Cycle Insights',
+      body: insightMessage,
+      scheduledDate: insightDate,
+      type: 'reminder',
+    });
+  }
+};
+

@@ -1,12 +1,17 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, format, parseISO, subDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { PeriodEntry, MoodEntry, SymptomEntry, UserPreferences } from '@/types';
-import { predictNextPeriod } from '@/lib/date-utils';
+import { predictNextPeriod, calculateFertilityWindow } from '@/lib/date-utils';
 import { useToast } from "@/hooks/use-toast";
 import { addLogEntry } from '@/lib/activity-logger';
-import { checkScheduledNotifications, schedulePeriodReminder, scheduleOvulationReminder } from '@/lib/notification-scheduler';
+import { 
+  checkScheduledNotifications, 
+  schedulePeriodReminders, 
+  scheduleEnhancedOvulationReminders, 
+  schedulePMSReminder,
+  schedulePersonalizedInsights
+} from '@/lib/notification-scheduler';
 
 // Define the shape of our context
 interface CycleContextType {
@@ -97,19 +102,29 @@ export const CycleProvider = ({ children }: { children: ReactNode }) => {
     const predictedDate = predictNextPeriod(periods);
     setNextPeriod(predictedDate);
     
-    // Schedule notifications if user has preferences set
+    // Schedule notifications if user has preferences set and we have a prediction
     if (predictedDate && userPreferences.notifications) {
-      // Schedule period reminder
-      if (userPreferences.reminders.periodStart) {
-        schedulePeriodReminder(predictedDate);
+      // Calculate fertility window and ovulation date
+      const { fertilityStart, fertilityEnd, ovulationDate } = calculateFertilityWindow(
+        predictedDate,
+        userPreferences.averageCycleLength
+      );
+      
+      // Schedule comprehensive period reminders
+      if (userPreferences.reminders.periodStart || userPreferences.reminders.periodEnd) {
+        schedulePeriodReminders(predictedDate, userPreferences.averagePeriodLength);
       }
       
-      // Calculate and schedule ovulation reminder
-      // Ovulation typically occurs ~14 days before the next period
-      if (userPreferences.reminders.ovulation) {
-        const ovulationDate = addDays(predictedDate, -14);
-        scheduleOvulationReminder(ovulationDate);
+      // Schedule enhanced ovulation and fertility reminders
+      if (userPreferences.reminders.ovulation || userPreferences.reminders.fertility) {
+        scheduleEnhancedOvulationReminders(ovulationDate, fertilityStart);
       }
+      
+      // Schedule PMS warning with management tips
+      schedulePMSReminder(predictedDate);
+      
+      // Schedule personalized insights based on cycle history
+      schedulePersonalizedInsights(periods, predictedDate);
     }
   }, [periods, userPreferences]);
 

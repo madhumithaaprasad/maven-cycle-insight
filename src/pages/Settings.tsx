@@ -11,6 +11,14 @@ import { Switch } from '@/components/ui/switch';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InfoCircledIcon } from '@radix-ui/react-icons';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const Settings = () => {
   const { userPreferences, updatePreferences } = useCycle();
@@ -97,90 +105,144 @@ const Settings = () => {
           </Button>
         </div>
         
-        <Card className="p-6">
-          <h2 className="text-lg font-medium mb-4">Cycle Settings</h2>
+        <Tabs defaultValue="cycle">
+          <TabsList className="grid grid-cols-2 mb-6">
+            <TabsTrigger value="cycle">Cycle Settings</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          </TabsList>
           
-          <div className="grid gap-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="averageCycleLength">Average Cycle Length (days)</Label>
-                <Input
-                  id="averageCycleLength"
-                  name="averageCycleLength"
-                  type="number"
-                  min="1"
-                  value={preferences.averageCycleLength}
-                  onChange={handleNumberChange}
-                />
+          <TabsContent value="cycle">
+            <Card className="p-6">
+              <h2 className="text-lg font-medium mb-4">Cycle Settings</h2>
+              
+              <div className="grid gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="averageCycleLength">Average Cycle Length (days)</Label>
+                    <Input
+                      id="averageCycleLength"
+                      name="averageCycleLength"
+                      type="number"
+                      min="1"
+                      value={preferences.averageCycleLength}
+                      onChange={handleNumberChange}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="averagePeriodLength">Average Period Length (days)</Label>
+                    <Input
+                      id="averagePeriodLength"
+                      name="averagePeriodLength"
+                      type="number"
+                      min="1"
+                      value={preferences.averagePeriodLength}
+                      onChange={handleNumberChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="notifications">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-medium">Notification Settings</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="text-gray-500 cursor-help">
+                        <InfoCircledIcon className="h-5 w-5" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Notifications will help you prepare for upcoming cycle events with timely reminders and health tips.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               
-              <div>
-                <Label htmlFor="averagePeriodLength">Average Period Length (days)</Label>
-                <Input
-                  id="averagePeriodLength"
-                  name="averagePeriodLength"
-                  type="number"
-                  min="1"
-                  value={preferences.averagePeriodLength}
-                  onChange={handleNumberChange}
-                />
-              </div>
-            </div>
-          </div>
-          
-          <Separator className="my-6" />
-          
-          <h2 className="text-lg font-medium mb-4">Notifications</h2>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="notifications-toggle">Enable Notifications</Label>
-                <p className="text-sm text-gray-500">
-                  Receive browser notifications for reminders
-                </p>
-              </div>
-              <Switch
-                id="notifications-toggle"
-                checked={preferences.notifications}
-                onCheckedChange={(checked) => handleSwitchChange('notifications', checked)}
-              />
-            </div>
-            
-            {preferences.notifications && (
-              <div className="space-y-4 pt-4 pl-4 border-l-2 border-maven-light-purple">
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="period-start-toggle">Period Start Reminder</Label>
+                  <div>
+                    <Label htmlFor="notifications-toggle" className="text-base font-medium">Enable All Notifications</Label>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Receive browser notifications for reminders and predictions
+                    </p>
+                  </div>
                   <Switch
-                    id="period-start-toggle"
-                    checked={preferences.reminders.periodStart}
-                    onCheckedChange={(checked) => handleSwitchChange('periodStart', checked)}
+                    id="notifications-toggle"
+                    checked={preferences.notifications}
+                    onCheckedChange={(checked) => handleSwitchChange('notifications', checked)}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="fertility-toggle">Fertility Window Reminder</Label>
-                  <Switch
-                    id="fertility-toggle"
-                    checked={preferences.reminders.fertility}
-                    onCheckedChange={(checked) => handleSwitchChange('fertility', checked)}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="ovulation-toggle">Ovulation Day Reminder</Label>
-                  <Switch
-                    id="ovulation-toggle"
-                    checked={preferences.reminders.ovulation}
-                    onCheckedChange={(checked) => handleSwitchChange('ovulation', checked)}
-                  />
-                </div>
+                {preferences.notifications && (
+                  <div className="space-y-6 pt-4 pl-4 border-l-2 border-maven-light-purple">
+                    <h3 className="text-base font-medium mb-2">Period Notifications</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="period-start-toggle">Period Start Predictions</Label>
+                          <p className="text-xs text-gray-500">Multiple notifications leading up to your period</p>
+                        </div>
+                        <Switch
+                          id="period-start-toggle"
+                          checked={preferences.reminders.periodStart}
+                          onCheckedChange={(checked) => handleSwitchChange('periodStart', checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="period-end-toggle">Period End Notification</Label>
+                          <p className="text-xs text-gray-500">Get notified when your period is likely ending</p>
+                        </div>
+                        <Switch
+                          id="period-end-toggle"
+                          checked={preferences.reminders.periodEnd}
+                          onCheckedChange={(checked) => handleSwitchChange('periodEnd', checked)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <Separator className="my-4" />
+                    
+                    <h3 className="text-base font-medium mb-2">Fertility Notifications</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="fertility-toggle">Fertility Window Alerts</Label>
+                          <p className="text-xs text-gray-500">Get notified about your fertility window</p>
+                        </div>
+                        <Switch
+                          id="fertility-toggle"
+                          checked={preferences.reminders.fertility}
+                          onCheckedChange={(checked) => handleSwitchChange('fertility', checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label htmlFor="ovulation-toggle">Ovulation Prediction</Label>
+                          <p className="text-xs text-gray-500">Receive reminders before and during ovulation</p>
+                        </div>
+                        <Switch
+                          id="ovulation-toggle"
+                          checked={preferences.reminders.ovulation}
+                          onCheckedChange={(checked) => handleSwitchChange('ovulation', checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          
-          <Separator className="my-6" />
-          
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="mt-6">
           <Button 
             onClick={handleSave}
             className="bg-maven-purple hover:bg-maven-deep-purple w-full"
@@ -188,11 +250,11 @@ const Settings = () => {
           >
             {isSaving ? 'Saving...' : 'Save Settings'}
           </Button>
-        </Card>
+        </div>
         
         <div className="mt-8 text-center">
           <p className="text-gray-500 text-sm">
-            Maven Period Tracker - Version 1.0.0
+            Maven Period Tracker - Version 1.1.0
             <br />
             Your data is stored locally in your browser
           </p>
